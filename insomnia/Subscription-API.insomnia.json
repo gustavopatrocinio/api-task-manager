@@ -1,0 +1,222 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2026-06-21T12:00:00.000Z",
+  "__export_source": "api-task-manager",
+  "resources": [
+    {
+      "_id": "wrk_subscription_api",
+      "_type": "workspace",
+      "name": "Subscription Management API",
+      "description": "Auth, Plans, Subscriptions e Payments. Rode: php artisan serve && php artisan migrate --seed"
+    },
+    {
+      "_id": "env_base",
+      "_type": "environment",
+      "parentId": "wrk_subscription_api",
+      "name": "Local",
+      "data": {
+        "base_url": "http://127.0.0.1:8000",
+        "token": "",
+        "plan_id": "1",
+        "subscription_id": "1",
+        "payment_id": "1",
+        "user_id": "2"
+      }
+    },
+    {
+      "_id": "fld_auth",
+      "_type": "request_group",
+      "parentId": "wrk_subscription_api",
+      "name": "Auth"
+    },
+    {
+      "_id": "fld_plans",
+      "_type": "request_group",
+      "parentId": "wrk_subscription_api",
+      "name": "Plans"
+    },
+    {
+      "_id": "fld_subscriptions",
+      "_type": "request_group",
+      "parentId": "wrk_subscription_api",
+      "name": "Subscriptions"
+    },
+    {
+      "_id": "fld_payments",
+      "_type": "request_group",
+      "parentId": "wrk_subscription_api",
+      "name": "Payments"
+    },
+    {
+      "_id": "req_login_customer",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login Customer",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/login",
+      "body": {"mimeType": "application/json", "text": "{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}]
+    },
+    {
+      "_id": "req_login_admin",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Login Admin",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/login",
+      "body": {"mimeType": "application/json", "text": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"password\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}]
+    },
+    {
+      "_id": "req_register",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Register",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/register",
+      "body": {"mimeType": "application/json", "text": "{\n  \"name\": \"João Silva\",\n  \"email\": \"joao@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}]
+    },
+    {
+      "_id": "req_me",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Me",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/auth/me",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_logout",
+      "_type": "request",
+      "parentId": "fld_auth",
+      "name": "Logout",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/auth/logout",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_plans_index",
+      "_type": "request",
+      "parentId": "fld_plans",
+      "name": "List Active Plans",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/plans",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_plans_show",
+      "_type": "request",
+      "parentId": "fld_plans",
+      "name": "Show Plan",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/plans/{{ _.plan_id }}",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_admin_plans_index",
+      "_type": "request",
+      "parentId": "fld_plans",
+      "name": "Admin List Plans",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/admin/plans",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_admin_plans_store",
+      "_type": "request",
+      "parentId": "fld_plans",
+      "name": "Admin Create Plan",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/plans",
+      "body": {"mimeType": "application/json", "text": "{\n  \"name\": \"Enterprise\",\n  \"slug\": \"enterprise\",\n  \"price\": 199.90,\n  \"interval\": \"monthly\",\n  \"trial_days\": 0\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_subscriptions_index",
+      "_type": "request",
+      "parentId": "fld_subscriptions",
+      "name": "List Subscriptions",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/subscriptions",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_subscriptions_store",
+      "_type": "request",
+      "parentId": "fld_subscriptions",
+      "name": "Create Subscription",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/subscriptions",
+      "body": {"mimeType": "application/json", "text": "{\n  \"plan_id\": {{ _.plan_id }},\n  \"payment_method\": \"pix\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_subscriptions_show",
+      "_type": "request",
+      "parentId": "fld_subscriptions",
+      "name": "Show Subscription",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/subscriptions/{{ _.subscription_id }}",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_subscriptions_cancel",
+      "_type": "request",
+      "parentId": "fld_subscriptions",
+      "name": "Cancel Subscription",
+      "method": "PATCH",
+      "url": "{{ _.base_url }}/api/v1/subscriptions/{{ _.subscription_id }}",
+      "body": {"mimeType": "application/json", "text": "{\n  \"status\": \"cancelled\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_subscriptions_destroy",
+      "_type": "request",
+      "parentId": "fld_subscriptions",
+      "name": "Delete Subscription",
+      "method": "DELETE",
+      "url": "{{ _.base_url }}/api/v1/subscriptions/{{ _.subscription_id }}",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_payments_index",
+      "_type": "request",
+      "parentId": "fld_payments",
+      "name": "List Payments",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/payments",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_payments_show",
+      "_type": "request",
+      "parentId": "fld_payments",
+      "name": "Show Payment",
+      "method": "GET",
+      "url": "{{ _.base_url }}/api/v1/payments/{{ _.payment_id }}",
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_admin_payments_confirm",
+      "_type": "request",
+      "parentId": "fld_payments",
+      "name": "Admin Confirm Payment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/payments/{{ _.payment_id }}/confirm",
+      "body": {"mimeType": "application/json", "text": "{\n  \"notes\": \"Recebido via PIX\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    },
+    {
+      "_id": "req_admin_payments_fail",
+      "_type": "request",
+      "parentId": "fld_payments",
+      "name": "Admin Fail Payment",
+      "method": "POST",
+      "url": "{{ _.base_url }}/api/v1/admin/payments/{{ _.payment_id }}/fail",
+      "body": {"mimeType": "application/json", "text": "{\n  \"notes\": \"Pagamento não identificado\"\n}"},
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+    }
+  ]
+}
