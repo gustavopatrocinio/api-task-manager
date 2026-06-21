@@ -1,26 +1,26 @@
 # Subscription Management API
 
-API REST para gestão de assinaturas de clientes. Desenvolvida com Laravel 13, autenticação via Sanctum e banco SQLite para desenvolvimento local.
+REST API for managing customer subscriptions. Built with Laravel 13, Sanctum authentication, and SQLite for local development.
 
-## Funcionalidades
+## Features
 
-- Autenticação com tokens Bearer (register, login, logout)
-- Papéis `admin` e `customer`
-- Catálogo de planos (admin gerencia, customer consulta planos ativos)
-- Assinaturas com trial, cancelamento e controle por usuário
-- Pagamentos locais com confirmação manual pelo admin
-- Respostas de erro JSON padronizadas
+- Bearer token authentication (register, login, logout)
+- `admin` and `customer` roles
+- Plan catalog (admin manages, customers browse active plans)
+- Subscriptions with trial periods, cancellation, and per-user access control
+- Local payments with manual admin confirmation
+- Standardized JSON error responses
 
-## Requisitos
+## Requirements
 
 - PHP 8.3+
 - Composer
-- Extensão SQLite (`pdo_sqlite`)
+- SQLite extension (`pdo_sqlite`)
 
-## Instalação
+## Installation
 
 ```bash
-git clone <seu-repo>
+git clone <your-repo>
 cd api-task-manager
 
 composer install
@@ -31,23 +31,23 @@ php artisan migrate --seed
 php artisan serve
 ```
 
-A API fica disponível em `http://127.0.0.1:8000`.
+The API will be available at `http://127.0.0.1:8000`.
 
-## Dados iniciais
+## Seed data
 
-Após `php artisan db:seed`:
+After running `php artisan db:seed`:
 
-| Tipo | Email / Slug | Senha / Detalhe |
-|------|----------------|-----------------|
+| Type | Email / Slug | Password / Details |
+|------|--------------|-------------------|
 | Admin | `admin@example.com` | `password` |
 | Customer | `customer@example.com` | `password` |
-| Plano Basic | slug: `basic` | R$ 29,90/mês |
-| Plano Pro Mensal | slug: `pro-mensal` | R$ 99,90/mês, 7 dias trial |
-| Plano Pro Anual | slug: `pro-anual` | R$ 999,90/ano, 14 dias trial |
+| Basic plan | slug: `basic` | R$ 29.90/month |
+| Pro Monthly | slug: `pro-mensal` | R$ 99.90/month, 7-day trial |
+| Pro Yearly | slug: `pro-anual` | R$ 999.90/year, 14-day trial |
 
-## Autenticação
+## Authentication
 
-Obtenha um token via login:
+Obtain a token via login:
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
@@ -55,7 +55,7 @@ curl -X POST http://127.0.0.1:8000/api/v1/auth/login \
   -d '{"email":"customer@example.com","password":"password"}'
 ```
 
-Use o token retornado nas rotas protegidas:
+Use the returned token on protected routes:
 
 ```
 Authorization: Bearer {token}
@@ -65,24 +65,24 @@ Authorization: Bearer {token}
 
 ### Auth
 
-| Método | Rota | Auth |
-|--------|------|------|
-| POST | `/api/v1/auth/register` | Não |
-| POST | `/api/v1/auth/login` | Não |
-| POST | `/api/v1/auth/logout` | Sim |
-| GET | `/api/v1/auth/me` | Sim |
+| Method | Route | Auth |
+|--------|-------|------|
+| POST | `/api/v1/auth/register` | No |
+| POST | `/api/v1/auth/login` | No |
+| POST | `/api/v1/auth/logout` | Yes |
+| GET | `/api/v1/auth/me` | Yes |
 
 ### Plans (customer)
 
-| Método | Rota | Auth |
-|--------|------|------|
-| GET | `/api/v1/plans` | Sim |
-| GET | `/api/v1/plans/{id}` | Sim |
+| Method | Route | Auth |
+|--------|-------|------|
+| GET | `/api/v1/plans` | Yes |
+| GET | `/api/v1/plans/{id}` | Yes |
 
 ### Plans (admin)
 
-| Método | Rota | Auth |
-|--------|------|------|
+| Method | Route | Auth |
+|--------|-------|------|
 | GET | `/api/v1/admin/plans` | Admin |
 | POST | `/api/v1/admin/plans` | Admin |
 | GET | `/api/v1/admin/plans/{id}` | Admin |
@@ -92,17 +92,17 @@ Authorization: Bearer {token}
 
 ### Subscriptions
 
-| Método | Rota | Auth |
-|--------|------|------|
-| GET | `/api/v1/subscriptions` | Sim |
-| POST | `/api/v1/subscriptions` | Sim |
-| GET | `/api/v1/subscriptions/{id}` | Sim |
-| PUT/PATCH | `/api/v1/subscriptions/{id}` | Sim |
-| DELETE | `/api/v1/subscriptions/{id}` | Sim |
+| Method | Route | Auth |
+|--------|-------|------|
+| GET | `/api/v1/subscriptions` | Yes |
+| POST | `/api/v1/subscriptions` | Yes |
+| GET | `/api/v1/subscriptions/{id}` | Yes |
+| PUT/PATCH | `/api/v1/subscriptions/{id}` | Yes |
+| DELETE | `/api/v1/subscriptions/{id}` | Yes |
 
-Filtros no index (admin): `status`, `user_id`, `plan_id`
+Admin index filters: `status`, `user_id`, `plan_id`
 
-Body do POST (customer):
+POST body (customer):
 
 ```json
 {
@@ -111,7 +111,7 @@ Body do POST (customer):
 }
 ```
 
-Body do POST (admin):
+POST body (admin):
 
 ```json
 {
@@ -123,69 +123,69 @@ Body do POST (admin):
 
 ### Payments
 
-| Método | Rota | Auth |
-|--------|------|------|
-| GET | `/api/v1/payments` | Sim |
-| GET | `/api/v1/payments/{id}` | Sim |
+| Method | Route | Auth |
+|--------|-------|------|
+| GET | `/api/v1/payments` | Yes |
+| GET | `/api/v1/payments/{id}` | Yes |
 | GET | `/api/v1/admin/payments` | Admin |
 | GET | `/api/v1/admin/payments/{id}` | Admin |
 | POST | `/api/v1/admin/payments/{id}/confirm` | Admin |
 | POST | `/api/v1/admin/payments/{id}/fail` | Admin |
 
-Ao assinar um plano, um pagamento `pending` é criado automaticamente. O admin confirma manualmente:
+When a customer subscribes to a plan, a `pending` payment is created automatically. The admin confirms it manually:
 
 ```json
 {
-  "notes": "Recebido via PIX"
+  "notes": "Received via PIX"
 }
 ```
 
-## Fluxo típico
+## Typical flow
 
-1. Customer faz login
-2. Customer lista planos ativos (`GET /plans`)
-3. Customer cria assinatura (`POST /subscriptions`)
-4. Admin confirma pagamento (`POST /admin/payments/{id}/confirm`)
-5. Assinatura passa para `active`
+1. Customer logs in
+2. Customer lists active plans (`GET /plans`)
+3. Customer creates a subscription (`POST /subscriptions`)
+4. Admin confirms the payment (`POST /admin/payments/{id}/confirm`)
+5. Subscription status becomes `active`
 
-## Erros
+## Errors
 
-Respostas de erro seguem o formato:
+Error responses follow this format:
 
 ```json
 {
-  "message": "Descrição do erro",
+  "message": "Error description",
   "errors": {}
 }
 ```
 
-| Status | Situação |
-|--------|----------|
-| 401 | Não autenticado |
-| 403 | Sem permissão |
-| 404 | Recurso não encontrado |
-| 422 | Erro de validação |
+| Status | Meaning |
+|--------|---------|
+| 401 | Unauthenticated |
+| 403 | Forbidden |
+| 404 | Resource not found |
+| 422 | Validation error |
 
-## Testes
+## Tests
 
 ```bash
 php artisan test
 ```
 
-## Collection Insomnia
+## Insomnia collection
 
-Importe o arquivo [`insomnia/Subscription-API.insomnia.json`](insomnia/Subscription-API.insomnia.json).
+Import [`insomnia/Subscription-API.insomnia.json`](insomnia/Subscription-API.insomnia.json).
 
-Configure no environment:
+Set these environment variables:
 
 - `base_url`: `http://127.0.0.1:8000`
-- `token`: preencher após login
+- `token`: fill in after login
 
-## Estrutura
+## Project structure
 
 ```
 app/
-├── Enums/           # Status e papéis
+├── Enums/           # Statuses and roles
 ├── Http/
 │   ├── Controllers/Api/
 │   ├── Middleware/
@@ -193,8 +193,8 @@ app/
 │   └── Resources/
 ├── Models/
 ├── Policies/
-├── Services/        # Regras de assinatura e pagamento
-└── Support/         # Respostas de erro padronizadas
+├── Services/        # Subscription and payment logic
+└── Support/         # Standardized error responses
 database/
 ├── migrations/
 ├── seeders/
@@ -204,9 +204,9 @@ tests/
 └── Unit/
 ```
 
-## Banco de dados
+## Database
 
-Desenvolvimento usa SQLite (`database/database.sqlite`). Para MySQL, ajuste o `.env`:
+Local development uses SQLite (`database/database.sqlite`). For MySQL, update `.env`:
 
 ```env
 DB_CONNECTION=mysql
@@ -217,6 +217,6 @@ DB_USERNAME=root
 DB_PASSWORD=
 ```
 
-## Licença
+## License
 
 MIT
