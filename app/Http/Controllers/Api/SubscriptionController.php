@@ -15,7 +15,10 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SubscriptionController extends Controller
 {
-    public function __construct(private SubscriptionService $subscriptionService) {}
+    public function __construct(private SubscriptionService $subscriptionService)
+    {
+        $this->middleware('idempotent')->only('store');
+    }
 
     public function index(IndexSubscriptionRequest $request): AnonymousResourceCollection
     {

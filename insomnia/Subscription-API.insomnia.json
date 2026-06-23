@@ -21,7 +21,8 @@
         "plan_id": "1",
         "subscription_id": "1",
         "payment_id": "1",
-        "user_id": "2"
+        "user_id": "2",
+        "idempotency_key": "550e8400-e29b-41d4-a716-446655440000"
       }
     },
     {
@@ -150,7 +151,7 @@
       "method": "POST",
       "url": "{{ _.base_url }}/api/v1/subscriptions",
       "body": {"mimeType": "application/json", "text": "{\n  \"plan_id\": {{ _.plan_id }},\n  \"payment_method\": \"pix\"\n}"},
-      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}, {"name": "Idempotency-Key", "value": "{{ _.idempotency_key }}"}]
     },
     {
       "_id": "req_subscriptions_show",
@@ -206,7 +207,7 @@
       "method": "POST",
       "url": "{{ _.base_url }}/api/v1/admin/payments/{{ _.payment_id }}/confirm",
       "body": {"mimeType": "application/json", "text": "{\n  \"notes\": \"Recebido via PIX\"\n}"},
-      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}, {"name": "Idempotency-Key", "value": "{{ _.idempotency_key }}"}]
     },
     {
       "_id": "req_admin_payments_fail",
@@ -216,7 +217,7 @@
       "method": "POST",
       "url": "{{ _.base_url }}/api/v1/admin/payments/{{ _.payment_id }}/fail",
       "body": {"mimeType": "application/json", "text": "{\n  \"notes\": \"Pagamento não identificado\"\n}"},
-      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}]
+      "headers": [{"name": "Accept", "value": "application/json"}, {"name": "Content-Type", "value": "application/json"}, {"name": "Authorization", "value": "Bearer {{ _.token }}"}, {"name": "Idempotency-Key", "value": "{{ _.idempotency_key }}"}]
     }
   ]
 }

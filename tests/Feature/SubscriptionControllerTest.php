@@ -113,7 +113,7 @@ class SubscriptionControllerTest extends TestCase
 
         $response = $this->postJson('/api/v1/subscriptions', [
             'plan_id' => $plan->id,
-        ]);
+        ], $this->idempotencyHeaders());
 
         $response->assertCreated()
             ->assertJsonPath('data.user_id', $customer->id)
@@ -135,7 +135,7 @@ class SubscriptionControllerTest extends TestCase
 
         Sanctum::actingAs($customer);
 
-        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id])
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id], $this->idempotencyHeaders())
             ->assertCreated()
             ->assertJsonPath('data.status', SubscriptionStatus::PastDue->value);
     }
@@ -151,7 +151,7 @@ class SubscriptionControllerTest extends TestCase
         $this->postJson('/api/v1/subscriptions', [
             'plan_id' => $plan->id,
             'user_id' => $customer->id,
-        ])
+        ], $this->idempotencyHeaders())
             ->assertCreated()
             ->assertJsonPath('data.user_id', $customer->id);
     }
@@ -165,11 +165,20 @@ class SubscriptionControllerTest extends TestCase
         ]));
     }
 
+    public function test_store_requires_idempotency_key(): void
+    {
+        Sanctum::actingAs(User::factory()->customer()->create());
+
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => 1])
+            ->assertUnprocessable()
+            ->assertJsonPath('message', 'Idempotency-Key header is required.');
+    }
+
     public function test_store_validates_required_plan_id(): void
     {
         Sanctum::actingAs(User::factory()->customer()->create());
 
-        $this->postJson('/api/v1/subscriptions', [])
+        $this->postJson('/api/v1/subscriptions', [], $this->idempotencyHeaders())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['plan_id'])
             ->assertJsonStructure(['message', 'errors']);
@@ -180,11 +189,11 @@ class SubscriptionControllerTest extends TestCase
         Sanctum::actingAs(User::factory()->customer()->create());
         $inactivePlan = Plan::factory()->inactive()->create();
 
-        $this->postJson('/api/v1/subscriptions', ['plan_id' => 99999])
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => 99999], $this->idempotencyHeaders())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['plan_id']);
 
-        $this->postJson('/api/v1/subscriptions', ['plan_id' => $inactivePlan->id])
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => $inactivePlan->id], $this->idempotencyHeaders())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['plan_id']);
     }
@@ -200,7 +209,7 @@ class SubscriptionControllerTest extends TestCase
 
         Sanctum::actingAs($customer);
 
-        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id])
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id], $this->idempotencyHeaders())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['plan_id']);
     }
@@ -210,7 +219,7 @@ class SubscriptionControllerTest extends TestCase
         Sanctum::actingAs(User::factory()->admin()->create());
         $plan = Plan::factory()->create();
 
-        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id])
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id], $this->idempotencyHeaders())
             ->assertUnprocessable()
             ->assertJsonValidationErrors(['user_id']);
     }

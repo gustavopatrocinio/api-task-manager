@@ -30,6 +30,10 @@ class PaymentService
 
     public function confirm(Payment $payment, User $admin, ?string $notes = null): Payment
     {
+        if ($payment->status === PaymentStatus::Paid) {
+            return $payment->fresh(['subscription.plan', 'confirmedBy']);
+        }
+
         if ($payment->status !== PaymentStatus::Pending) {
             throw new InvalidArgumentException('Only pending payments can be confirmed.');
         }
@@ -56,6 +60,10 @@ class PaymentService
 
     public function fail(Payment $payment, ?string $notes = null): Payment
     {
+        if ($payment->status === PaymentStatus::Failed) {
+            return $payment->fresh(['subscription.plan']);
+        }
+
         if ($payment->status !== PaymentStatus::Pending) {
             throw new InvalidArgumentException('Only pending payments can be marked as failed.');
         }

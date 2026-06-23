@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsureIdempotency;
 use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Support\ApiErrorResponse;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -22,6 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'admin' => EnsureUserIsAdmin::class,
+            'idempotent' => EnsureIdempotency::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

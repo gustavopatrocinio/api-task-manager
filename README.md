@@ -9,6 +9,7 @@ REST API for managing customer subscriptions. Built with Laravel 13, Sanctum aut
 - Plan catalog (admin manages, customers browse active plans)
 - Subscriptions with trial periods, cancellation, and per-user access control
 - Local payments with manual admin confirmation
+- Idempotent writes on subscription creation and payment confirm/fail
 - Standardized JSON error responses
 
 ## Requirements
@@ -59,6 +60,28 @@ Use the returned token on protected routes:
 
 ```
 Authorization: Bearer {token}
+```
+
+## Idempotency
+
+These write endpoints require an `Idempotency-Key` header (max 255 characters, e.g. a UUID):
+
+| Method | Route |
+|--------|-------|
+| POST | `/api/v1/subscriptions` |
+| POST | `/api/v1/admin/payments/{id}/confirm` |
+| POST | `/api/v1/admin/payments/{id}/fail` |
+
+Send the **same key** when retrying a request (network timeout, client retry). The API returns the cached response with `Idempotent-Replay: true` and does not execute the operation again.
+
+Keys are scoped per authenticated user, HTTP method, and route path. They expire after 24 hours. Validation errors (422) are also cached; server errors (5xx) are not.
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/v1/subscriptions \
+  -H "Authorization: Bearer {token}" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: 550e8400-e29b-41d4-a716-446655440000" \
+  -d '{"plan_id": 1, "payment_method": "pix"}'
 ```
 
 ## Endpoints
@@ -164,6 +187,7 @@ Error responses follow this format:
 | 401 | Unauthenticated |
 | 403 | Forbidden |
 | 404 | Resource not found |
+| 409 | Idempotent request already in progress |
 | 422 | Validation error |
 
 ## Tests
@@ -180,6 +204,7 @@ Set these environment variables:
 
 - `base_url`: `http://127.0.0.1:8000`
 - `token`: fill in after login
+- `idempotency_key`: generate a new UUID for each distinct write; reuse the same value when retrying
 
 ## Project structure
 
@@ -193,7 +218,7 @@ app/
 │   └── Resources/
 ├── Models/
 ├── Policies/
-├── Services/        # Subscription and payment logic
+├── Services/        # Subscription, payment, and idempotency logic
 └── Support/         # Standardized error responses
 database/
 ├── migrations/

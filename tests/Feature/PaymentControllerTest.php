@@ -26,7 +26,7 @@ class PaymentControllerTest extends TestCase
         $response = $this->postJson('/api/v1/subscriptions', [
             'plan_id' => $plan->id,
             'payment_method' => 'pix',
-        ]);
+        ], $this->idempotencyHeaders());
 
         $response->assertCreated()
             ->assertJsonPath('data.latest_payment.status', PaymentStatus::Pending->value)
@@ -72,7 +72,7 @@ class PaymentControllerTest extends TestCase
 
         $this->postJson('/api/v1/admin/payments/'.$payment->id.'/confirm', [
             'notes' => 'Pagamento recebido via PIX',
-        ])
+        ], $this->idempotencyHeaders())
             ->assertOk()
             ->assertJsonPath('data.status', PaymentStatus::Paid->value)
             ->assertJsonPath('data.confirmed_by', $admin->id);
@@ -91,7 +91,7 @@ class PaymentControllerTest extends TestCase
 
         Sanctum::actingAs($admin);
 
-        $this->postJson('/api/v1/admin/payments/'.$payment->id.'/fail')
+        $this->postJson('/api/v1/admin/payments/'.$payment->id.'/fail', [], $this->idempotencyHeaders())
             ->assertOk()
             ->assertJsonPath('data.status', PaymentStatus::Failed->value);
 
@@ -101,16 +101,16 @@ class PaymentControllerTest extends TestCase
         ]);
     }
 
-    public function test_admin_cannot_confirm_non_pending_payment(): void
+    public function test_admin_confirm_is_idempotent_for_already_paid_payment(): void
     {
         $admin = User::factory()->admin()->create();
         $payment = Payment::factory()->paid()->create();
 
         Sanctum::actingAs($admin);
 
-        $this->postJson('/api/v1/admin/payments/'.$payment->id.'/confirm')
-            ->assertUnprocessable()
-            ->assertJsonValidationErrors(['payment']);
+        $this->postJson('/api/v1/admin/payments/'.$payment->id.'/confirm', [], $this->idempotencyHeaders())
+            ->assertOk()
+            ->assertJsonPath('data.status', PaymentStatus::Paid->value);
     }
 
     public function test_payments_require_authentication(): void

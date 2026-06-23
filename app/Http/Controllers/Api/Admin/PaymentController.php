@@ -15,7 +15,10 @@ use InvalidArgumentException;
 
 class PaymentController extends Controller
 {
-    public function __construct(private PaymentService $paymentService) {}
+    public function __construct(private PaymentService $paymentService)
+    {
+        $this->middleware('idempotent')->only(['confirm', 'fail']);
+    }
 
     public function index(IndexPaymentRequest $request): AnonymousResourceCollection
     {

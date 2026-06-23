@@ -6,6 +6,7 @@ use App\Enums\SubscriptionStatus;
 use App\Models\Plan;
 use App\Models\Subscription;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SubscriptionService
 {
@@ -14,6 +15,18 @@ class SubscriptionService
     public function subscribe(int $userId, Plan $plan, ?string $paymentMethod = null): Subscription
     {
         return DB::transaction(function () use ($userId, $plan, $paymentMethod) {
+            $hasActiveSubscription = Subscription::query()
+                ->where('user_id', $userId)
+                ->active()
+                ->lockForUpdate()
+                ->exists();
+
+            if ($hasActiveSubscription) {
+                throw ValidationException::withMessages([
+                    'plan_id' => ['The user already has an active subscription.'],
+                ]);
+            }
+
             $startsAt = now();
 
             $subscription = Subscription::query()->create([

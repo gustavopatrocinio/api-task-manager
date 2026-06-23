@@ -16,7 +16,7 @@ class ApiExceptionHandlingTest extends TestCase
     {
         Sanctum::actingAs(User::factory()->customer()->create());
 
-        $response = $this->postJson('/api/v1/subscriptions', []);
+        $response = $this->postJson('/api/v1/subscriptions', [], $this->idempotencyHeaders());
 
         $response->assertUnprocessable()
             ->assertJsonStructure([
