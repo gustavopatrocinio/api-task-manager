@@ -83,4 +83,19 @@ class Subscription extends Model
             SubscriptionStatus::Active,
         ]);
     }
+
+    /**
+     * Subscriptions that prevent creating a new one for the same user.
+     *
+     * @param  Builder<Subscription>  $query
+     * @return Builder<Subscription>
+     */
+    public function scopeBlocking(Builder $query): Builder
+    {
+        return $query->whereIn('status', [
+            SubscriptionStatus::Trialing,
+            SubscriptionStatus::Active,
+            SubscriptionStatus::PastDue,
+        ]);
+    }
 }

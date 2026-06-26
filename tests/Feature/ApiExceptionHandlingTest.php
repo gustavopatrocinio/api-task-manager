@@ -23,7 +23,7 @@ class ApiExceptionHandlingTest extends TestCase
                 'message',
                 'errors' => ['plan_id'],
             ])
-            ->assertJsonPath('message', 'The plan id field is required.');
+            ->assertJsonPath('message', 'A plan must be selected.');
     }
 
     public function test_not_found_returns_standardized_json_response(): void

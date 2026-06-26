@@ -9,6 +9,7 @@ use App\Http\Resources\PlanResource;
 use App\Models\Plan;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Validation\ValidationException;
 
 class PlanController extends Controller
 {
@@ -47,6 +48,12 @@ class PlanController extends Controller
     public function destroy(Plan $plan): JsonResponse
     {
         $this->authorize('delete', $plan);
+
+        if ($plan->subscriptions()->exists()) {
+            throw ValidationException::withMessages([
+                'plan' => ['Cannot delete a plan that has subscriptions.'],
+            ]);
+        }
 
         $plan->delete();
 

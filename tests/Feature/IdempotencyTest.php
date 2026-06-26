@@ -99,6 +99,6 @@ class IdempotencyTest extends TestCase
             'plan_id' => $plan->id,
         ], $this->idempotencyHeaders('different-key'))
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['plan_id']);
+            ->assertJsonValidationErrors(['subscription']);
     }
 }

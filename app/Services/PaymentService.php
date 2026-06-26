@@ -35,7 +35,10 @@ class PaymentService
         }
 
         if ($payment->status !== PaymentStatus::Pending) {
-            throw new InvalidArgumentException('Only pending payments can be confirmed.');
+            throw new InvalidArgumentException(sprintf(
+                'This payment cannot be confirmed because its status is "%s".',
+                $payment->status->value,
+            ));
         }
 
         return DB::transaction(function () use ($payment, $admin, $notes) {
@@ -65,7 +68,10 @@ class PaymentService
         }
 
         if ($payment->status !== PaymentStatus::Pending) {
-            throw new InvalidArgumentException('Only pending payments can be marked as failed.');
+            throw new InvalidArgumentException(sprintf(
+                'This payment cannot be marked as failed because its status is "%s".',
+                $payment->status->value,
+            ));
         }
 
         return DB::transaction(function () use ($payment, $notes) {

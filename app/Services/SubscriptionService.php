@@ -15,15 +15,15 @@ class SubscriptionService
     public function subscribe(int $userId, Plan $plan, ?string $paymentMethod = null): Subscription
     {
         return DB::transaction(function () use ($userId, $plan, $paymentMethod) {
-            $hasActiveSubscription = Subscription::query()
+            $hasBlockingSubscription = Subscription::query()
                 ->where('user_id', $userId)
-                ->active()
+                ->blocking()
                 ->lockForUpdate()
                 ->exists();
 
-            if ($hasActiveSubscription) {
+            if ($hasBlockingSubscription) {
                 throw ValidationException::withMessages([
-                    'plan_id' => ['The user already has an active subscription.'],
+                    'subscription' => ['You already have an ongoing subscription. Cancel it or resolve pending payments before subscribing to a new plan.'],
                 ]);
             }
 

@@ -191,11 +191,13 @@ class SubscriptionControllerTest extends TestCase
 
         $this->postJson('/api/v1/subscriptions', ['plan_id' => 99999], $this->idempotencyHeaders())
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['plan_id']);
+            ->assertJsonValidationErrors(['plan_id'])
+            ->assertJsonPath('errors.plan_id.0', 'The selected plan was not found.');
 
         $this->postJson('/api/v1/subscriptions', ['plan_id' => $inactivePlan->id], $this->idempotencyHeaders())
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['plan_id']);
+            ->assertJsonValidationErrors(['plan_id'])
+            ->assertJsonPath('errors.plan_id.0', 'This plan is no longer available.');
     }
 
     public function test_store_rejects_customer_with_existing_active_subscription(): void
@@ -211,7 +213,39 @@ class SubscriptionControllerTest extends TestCase
 
         $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id], $this->idempotencyHeaders())
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['plan_id']);
+            ->assertJsonValidationErrors(['subscription']);
+    }
+
+    public function test_store_rejects_customer_with_past_due_subscription(): void
+    {
+        $customer = User::factory()->customer()->create();
+        $plan = Plan::factory()->create();
+
+        Subscription::factory()->for($customer)->create([
+            'status' => SubscriptionStatus::PastDue,
+        ]);
+
+        Sanctum::actingAs($customer);
+
+        $this->postJson('/api/v1/subscriptions', ['plan_id' => $plan->id], $this->idempotencyHeaders())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['subscription']);
+    }
+
+    public function test_store_rejects_admin_user_id_when_not_customer(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $otherAdmin = User::factory()->admin()->create();
+        $plan = Plan::factory()->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/v1/subscriptions', [
+            'plan_id' => $plan->id,
+            'user_id' => $otherAdmin->id,
+        ], $this->idempotencyHeaders())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['user_id']);
     }
 
     public function test_store_requires_user_id_when_authenticated_as_admin(): void
@@ -376,7 +410,93 @@ class SubscriptionControllerTest extends TestCase
             'cancelled_at' => null,
         ])
             ->assertUnprocessable()
-            ->assertJsonValidationErrors(['cancelled_at']);
+            ->assertJsonValidationErrors(['cancelled_at'])
+            ->assertJsonPath('errors.cancelled_at.0', 'The cancellation date cannot be null when cancelling.');
+    }
+
+    public function test_customer_cannot_set_status_to_active(): void
+    {
+        $customer = User::factory()->customer()->create();
+        $subscription = Subscription::factory()->for($customer)->create([
+            'status' => SubscriptionStatus::PastDue,
+        ]);
+
+        Sanctum::actingAs($customer);
+
+        $this->patchJson('/api/v1/subscriptions/'.$subscription->id, [
+            'status' => SubscriptionStatus::Active->value,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status'])
+            ->assertJsonPath('errors.status.0', 'You may only cancel your subscription.');
+    }
+
+    public function test_customer_cannot_update_plan_id(): void
+    {
+        $customer = User::factory()->customer()->create();
+        $subscription = Subscription::factory()->for($customer)->create();
+        $newPlan = Plan::factory()->create();
+
+        Sanctum::actingAs($customer);
+
+        $this->patchJson('/api/v1/subscriptions/'.$subscription->id, [
+            'plan_id' => $newPlan->id,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['plan_id'])
+            ->assertJsonPath('errors.plan_id.0', 'You are not allowed to update this field.');
+    }
+
+    public function test_customer_cannot_cancel_already_cancelled_subscription(): void
+    {
+        $customer = User::factory()->customer()->create();
+        $subscription = Subscription::factory()->for($customer)->create([
+            'status' => SubscriptionStatus::Cancelled,
+            'cancelled_at' => now(),
+        ]);
+
+        Sanctum::actingAs($customer);
+
+        $this->patchJson('/api/v1/subscriptions/'.$subscription->id, [
+            'status' => SubscriptionStatus::Cancelled->value,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status'])
+            ->assertJsonPath('errors.status.0', 'This subscription can no longer be cancelled.');
+    }
+
+    public function test_admin_cannot_update_subscription_to_inactive_plan(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $subscription = Subscription::factory()->create();
+        $inactivePlan = Plan::factory()->inactive()->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson('/api/v1/subscriptions/'.$subscription->id, [
+            'plan_id' => $inactivePlan->id,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['plan_id'])
+            ->assertJsonPath('errors.plan_id.0', 'The selected plan is not available.');
+    }
+
+    public function test_admin_cannot_change_status_of_cancelled_subscription(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $subscription = Subscription::factory()->create([
+            'status' => SubscriptionStatus::Cancelled,
+            'cancelled_at' => now(),
+        ]);
+
+        Sanctum::actingAs($admin);
+
+        $this->patchJson('/api/v1/subscriptions/'.$subscription->id, [
+            'status' => SubscriptionStatus::Active->value,
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['status'])
+            ->assertJsonPath('errors.status.0', 'Cannot change the status of a cancelled or expired subscription.');
     }
 
     public function test_update_returns_not_found_for_missing_subscription(): void

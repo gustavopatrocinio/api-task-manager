@@ -99,6 +99,22 @@ class PlanControllerTest extends TestCase
             ->assertJsonValidationErrors(['name', 'slug', 'price', 'interval']);
     }
 
+    public function test_admin_cannot_delete_plan_with_subscriptions(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $plan = Plan::factory()->create();
+        \App\Models\Subscription::factory()->for($plan)->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->deleteJson('/api/v1/admin/plans/'.$plan->id)
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['plan'])
+            ->assertJsonPath('errors.plan.0', 'Cannot delete a plan that has subscriptions.');
+
+        $this->assertDatabaseHas('plans', ['id' => $plan->id]);
+    }
+
     public function test_plans_require_authentication(): void
     {
         $this->getJson('/api/v1/plans')->assertUnauthorized();

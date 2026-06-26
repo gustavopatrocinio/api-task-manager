@@ -113,6 +113,38 @@ class PaymentControllerTest extends TestCase
             ->assertJsonPath('data.status', PaymentStatus::Paid->value);
     }
 
+    public function test_admin_confirm_rejects_failed_payment(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $payment = Payment::factory()->failed()->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/v1/admin/payments/'.$payment->id.'/confirm', [], $this->idempotencyHeaders())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment'])
+            ->assertJsonPath(
+                'errors.payment.0',
+                'This payment cannot be confirmed because its status is "failed".',
+            );
+    }
+
+    public function test_admin_fail_rejects_paid_payment(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $payment = Payment::factory()->paid()->create();
+
+        Sanctum::actingAs($admin);
+
+        $this->postJson('/api/v1/admin/payments/'.$payment->id.'/fail', [], $this->idempotencyHeaders())
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['payment'])
+            ->assertJsonPath(
+                'errors.payment.0',
+                'This payment cannot be marked as failed because its status is "paid".',
+            );
+    }
+
     public function test_payments_require_authentication(): void
     {
         $this->getJson('/api/v1/payments')->assertUnauthorized();
